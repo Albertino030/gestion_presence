@@ -1,0 +1,300 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ======================================================
+// ENUMS
+// ======================================================
+
+enum UserRole {
+  ADMIN
+  PROFESSEUR
+}
+
+enum PresenceStatus {
+  PRESENT
+  ABSENT
+  RETARD
+}
+
+enum DetectionMethod {
+  WIFI
+  MANUEL
+  GPS
+  QR_CODE
+}
+
+enum ReclamationStatus {
+  EN_ATTENTE
+  ACCEPTEE
+  REFUSEE
+}
+
+enum JourSemaine {
+  LUNDI
+  MARDI
+  MERCREDI
+  JEUDI
+  VENDREDI
+  SAMEDI
+}
+
+// ======================================================
+// UTILISATEUR
+// ======================================================
+
+model User {
+  id         Int      @id @default(autoincrement())
+  nom        String
+  prenom     String
+  email      String   @unique
+  password   String
+  role       UserRole @default(PROFESSEUR)
+
+  professeur Professeur?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([nom])
+  @@index([prenom])
+  @@index([role])
+}
+
+// ======================================================
+// PROFESSEUR
+// ======================================================
+
+model Professeur {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  telephone    String?
+  actif        Boolean  @default(true)
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  matieres     ProfesseurMatiere[]
+  cours        Cours[]
+  presences    PresenceProfesseur[]
+  reclamations Reclamation[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([actif])
+}
+
+// ======================================================
+// CLASSE
+// ======================================================
+
+model Classe {
+  id          Int      @id @default(autoincrement())
+  nom         String
+  niveau      String?
+  description String?
+  actif       Boolean  @default(true)
+
+  eleves      Eleve[]
+  cours       Cours[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([nom])
+  @@index([niveau])
+  @@index([actif])
+}
+
+// ======================================================
+// ELEVE
+// ======================================================
+
+model Eleve {
+  id            Int      @id @default(autoincrement())
+  matricule     String   @unique
+  nom           String
+  prenom        String
+  dateNaissance DateTime?
+  telephone     String?
+  actif         Boolean  @default(true)
+
+  classeId      Int
+  classe        Classe   @relation(fields: [classeId], references: [id], onDelete: Restrict)
+
+  presences     PresenceEleve[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([nom])
+  @@index([prenom])
+  @@index([classeId])
+  @@index([actif])
+}
+
+// ======================================================
+// MATIERE
+// ======================================================
+
+model Matiere {
+  id          Int      @id @default(autoincrement())
+  nom         String
+  code        String?  @unique
+  description String?
+  actif       Boolean  @default(true)
+
+  professeurs ProfesseurMatiere[]
+  cours       Cours[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([nom])
+  @@index([actif])
+}
+
+// ======================================================
+// PROFESSEUR <-> MATIERE
+// ======================================================
+
+model ProfesseurMatiere {
+  id           Int        @id @default(autoincrement())
+  professeurId Int
+  matiereId    Int
+
+  professeur   Professeur @relation(fields: [professeurId], references: [id], onDelete: Cascade)
+  matiere      Matiere    @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime   @default(now())
+
+  @@unique([professeurId, matiereId])
+  @@index([professeurId])
+  @@index([matiereId])
+}
+
+// ======================================================
+// COURS
+// ======================================================
+
+model Cours {
+  id              Int          @id @default(autoincrement())
+  professeurId    Int
+  classeId        Int
+  matiereId       Int
+
+  jour            JourSemaine
+  heureDebut      String
+  heureFin        String
+
+  salle           String?
+  actif           Boolean      @default(true)
+
+  professeur      Professeur   @relation(fields: [professeurId], references: [id], onDelete: Restrict)
+  classe          Classe       @relation(fields: [classeId], references: [id], onDelete: Restrict)
+  matiere         Matiere      @relation(fields: [matiereId], references: [id], onDelete: Restrict)
+
+  presencesEleves PresenceEleve[]
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([professeurId])
+  @@index([classeId])
+  @@index([matiereId])
+  @@index([jour])
+  @@index([actif])
+}
+
+// ======================================================
+// PRESENCE PROFESSEUR
+// ======================================================
+
+model PresenceProfesseur {
+  id               Int              @id @default(autoincrement())
+  professeurId     Int
+  datePresence     DateTime
+
+  heureArrivee     DateTime?
+  heureDepart      DateTime?
+
+  statut           PresenceStatus   @default(PRESENT)
+  methodeDetection DetectionMethod  @default(MANUEL)
+
+  commentaire      String?
+
+  professeur       Professeur       @relation(fields: [professeurId], references: [id], onDelete: Cascade)
+
+  reclamations     Reclamation[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([professeurId, datePresence])
+  @@index([datePresence])
+  @@index([statut])
+  @@index([methodeDetection])
+  @@index([professeurId])
+}
+
+// ======================================================
+// PRESENCE ELEVE
+// ======================================================
+
+model PresenceEleve {
+  id           Int            @id @default(autoincrement())
+  eleveId      Int
+  coursId      Int
+
+  datePresence DateTime
+  heureAppel   DateTime?
+
+  statut       PresenceStatus @default(PRESENT)
+  commentaire  String?
+
+  eleve        Eleve          @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  cours        Cours          @relation(fields: [coursId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([eleveId, coursId, datePresence])
+  @@index([eleveId])
+  @@index([coursId])
+  @@index([datePresence])
+  @@index([statut])
+}
+
+// ======================================================
+// RECLAMATION
+// ======================================================
+
+model Reclamation {
+  id                   Int                @id @default(autoincrement())
+  professeurId         Int
+  presenceProfesseurId Int
+
+  motif                String
+  statut               ReclamationStatus  @default(EN_ATTENTE)
+
+  dateReclamation      DateTime           @default(now())
+  dateTraitement       DateTime?
+
+  commentaireAdmin     String?
+
+  professeur           Professeur         @relation(fields: [professeurId], references: [id], onDelete: Cascade)
+  presenceProfesseur   PresenceProfesseur @relation(fields: [presenceProfesseurId], references: [id], onDelete: Cascade)
+
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([professeurId])
+  @@index([presenceProfesseurId])
+  @@index([statut])
+  @@index([dateReclamation])
+}
