@@ -41,20 +41,26 @@ export default function LoginPage() {
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !data.success) {
         throw new Error(
           data.message || "E-mail ou mot de passe incorrect."
         );
       }
 
-      if (!data.success) {
-        throw new Error(
-          data.message || "Connexion impossible."
-        );
+      /*
+       * Le rôle vient directement de la base de données.
+       * L'utilisateur ne choisit jamais son rôle.
+       */
+      const role = data.utilisateur?.role;
+
+      if (role === "ADMIN") {
+        router.push("/dashboard");
+      } else if (role === "PROFESSEUR") {
+        router.push("/professeur");
+      } else {
+        throw new Error("Rôle utilisateur non reconnu.");
       }
 
-      // Connexion réussie.
-      router.push("/dashboard");
       router.refresh();
     } catch (err) {
       setError(
@@ -93,7 +99,7 @@ export default function LoginPage() {
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Connectez-vous à votre espace administrateur.
+              Connectez-vous à votre espace.
             </p>
           </div>
 
@@ -128,7 +134,7 @@ export default function LoginPage() {
                   onChange={(event) =>
                     setEmail(event.target.value)
                   }
-                  placeholder="admin@lecolino.local"
+                  placeholder="Votre adresse e-mail"
                   autoComplete="email"
                   required
                   disabled={loading}
@@ -209,7 +215,7 @@ export default function LoginPage() {
 
         {/* Pied de page */}
         <p className="mt-6 text-center text-xs text-slate-400">
-          Le Colino — Administration des présences
+          Le Colino — Gestion des présences
         </p>
       </div>
     </main>
