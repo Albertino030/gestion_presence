@@ -1325,6 +1325,7 @@ export type ClasseCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * The data used to create many Classes.
    */
   data: Prisma.ClasseCreateManyInput | Prisma.ClasseCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1343,6 +1344,7 @@ export type ClasseCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensio
    * The data used to create many Classes.
    */
   data: Prisma.ClasseCreateManyInput | Prisma.ClasseCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

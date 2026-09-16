@@ -588,6 +588,7 @@ export type PresenceProfesseurCreateOrConnectWithoutProfesseurInput = {
 
 export type PresenceProfesseurCreateManyProfesseurInputEnvelope = {
   data: Prisma.PresenceProfesseurCreateManyProfesseurInput | Prisma.PresenceProfesseurCreateManyProfesseurInput[]
+  skipDuplicates?: boolean
 }
 
 export type PresenceProfesseurUpsertWithWhereUniqueWithoutProfesseurInput = {
@@ -1524,6 +1525,7 @@ export type PresenceProfesseurCreateManyArgs<ExtArgs extends runtime.Types.Exten
    * The data used to create many PresenceProfesseurs.
    */
   data: Prisma.PresenceProfesseurCreateManyInput | Prisma.PresenceProfesseurCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1542,6 +1544,7 @@ export type PresenceProfesseurCreateManyAndReturnArgs<ExtArgs extends runtime.Ty
    * The data used to create many PresenceProfesseurs.
    */
   data: Prisma.PresenceProfesseurCreateManyInput | Prisma.PresenceProfesseurCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

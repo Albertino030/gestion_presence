@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../lib/generated/prisma"
+  previewFeatures = ["multiSchema"]    // ← AJOUTER cette ligne
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+  schemas  = ["public"]        // ← AJOUTER cette ligne
 }
 
 // ======================================================
@@ -14,12 +16,14 @@ datasource db {
 enum UserRole {
   ADMIN
   PROFESSEUR
+  @@schema("public")
 }
 
 enum PresenceStatus {
   PRESENT
   ABSENT
   RETARD
+  @@schema("public")
 }
 
 enum DetectionMethod {
@@ -27,12 +31,14 @@ enum DetectionMethod {
   MANUEL
   GPS
   QR_CODE
+  @@schema("public")
 }
 
 enum ReclamationStatus {
   EN_ATTENTE
   ACCEPTEE
   REFUSEE
+  @@schema("public")
 }
 
 enum JourSemaine {
@@ -42,6 +48,7 @@ enum JourSemaine {
   JEUDI
   VENDREDI
   SAMEDI
+  @@schema("public")
 }
 
 // ======================================================
@@ -64,6 +71,7 @@ model User {
   @@index([nom])
   @@index([prenom])
   @@index([role])
+  @@schema("public") 
 }
 
 // ======================================================
@@ -87,6 +95,7 @@ model Professeur {
   updatedAt    DateTime @updatedAt
 
   @@index([actif])
+  @@schema("public") 
 }
 
 // ======================================================
@@ -109,6 +118,7 @@ model Classe {
   @@index([nom])
   @@index([niveau])
   @@index([actif])
+  @@schema("public") 
 }
 
 // ======================================================
@@ -136,6 +146,7 @@ model Eleve {
   @@index([prenom])
   @@index([classeId])
   @@index([actif])
+  @@schema("public") 
 }
 
 // ======================================================
@@ -157,6 +168,7 @@ model Matiere {
 
   @@index([nom])
   @@index([actif])
+  @@schema("public") 
 }
 
 // ======================================================
@@ -176,6 +188,7 @@ model ProfesseurMatiere {
   @@unique([professeurId, matiereId])
   @@index([professeurId])
   @@index([matiereId])
+  @@schema("public") 
 }
 
 // ======================================================
@@ -209,6 +222,7 @@ model Cours {
   @@index([matiereId])
   @@index([jour])
   @@index([actif])
+  @@schema("public") 
 }
 
 // ======================================================
@@ -240,6 +254,7 @@ model PresenceProfesseur {
   @@index([statut])
   @@index([methodeDetection])
   @@index([professeurId])
+  @@schema("public") 
 }
 
 // ======================================================
@@ -268,6 +283,7 @@ model PresenceEleve {
   @@index([coursId])
   @@index([datePresence])
   @@index([statut])
+  @@schema("public") 
 }
 
 // ======================================================
@@ -297,4 +313,5 @@ model Reclamation {
   @@index([presenceProfesseurId])
   @@index([statut])
   @@index([dateReclamation])
+  @@schema("public") 
 }

@@ -600,6 +600,7 @@ export type ReclamationCreateOrConnectWithoutProfesseurInput = {
 
 export type ReclamationCreateManyProfesseurInputEnvelope = {
   data: Prisma.ReclamationCreateManyProfesseurInput | Prisma.ReclamationCreateManyProfesseurInput[]
+  skipDuplicates?: boolean
 }
 
 export type ReclamationUpsertWithWhereUniqueWithoutProfesseurInput = {
@@ -664,6 +665,7 @@ export type ReclamationCreateOrConnectWithoutPresenceProfesseurInput = {
 
 export type ReclamationCreateManyPresenceProfesseurInputEnvelope = {
   data: Prisma.ReclamationCreateManyPresenceProfesseurInput | Prisma.ReclamationCreateManyPresenceProfesseurInput[]
+  skipDuplicates?: boolean
 }
 
 export type ReclamationUpsertWithWhereUniqueWithoutPresenceProfesseurInput = {
@@ -1536,6 +1538,7 @@ export type ReclamationCreateManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * The data used to create many Reclamations.
    */
   data: Prisma.ReclamationCreateManyInput | Prisma.ReclamationCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1554,6 +1557,7 @@ export type ReclamationCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Ext
    * The data used to create many Reclamations.
    */
   data: Prisma.ReclamationCreateManyInput | Prisma.ReclamationCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

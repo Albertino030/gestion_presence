@@ -702,6 +702,7 @@ export type CoursCreateOrConnectWithoutProfesseurInput = {
 
 export type CoursCreateManyProfesseurInputEnvelope = {
   data: Prisma.CoursCreateManyProfesseurInput | Prisma.CoursCreateManyProfesseurInput[]
+  skipDuplicates?: boolean
 }
 
 export type CoursUpsertWithWhereUniqueWithoutProfesseurInput = {
@@ -771,6 +772,7 @@ export type CoursCreateOrConnectWithoutClasseInput = {
 
 export type CoursCreateManyClasseInputEnvelope = {
   data: Prisma.CoursCreateManyClasseInput | Prisma.CoursCreateManyClasseInput[]
+  skipDuplicates?: boolean
 }
 
 export type CoursUpsertWithWhereUniqueWithoutClasseInput = {
@@ -823,6 +825,7 @@ export type CoursCreateOrConnectWithoutMatiereInput = {
 
 export type CoursCreateManyMatiereInputEnvelope = {
   data: Prisma.CoursCreateManyMatiereInput | Prisma.CoursCreateManyMatiereInput[]
+  skipDuplicates?: boolean
 }
 
 export type CoursUpsertWithWhereUniqueWithoutMatiereInput = {
@@ -1879,6 +1882,7 @@ export type CoursCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * The data used to create many Cours.
    */
   data: Prisma.CoursCreateManyInput | Prisma.CoursCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1897,6 +1901,7 @@ export type CoursCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    * The data used to create many Cours.
    */
   data: Prisma.CoursCreateManyInput | Prisma.CoursCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

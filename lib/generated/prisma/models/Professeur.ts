@@ -1622,6 +1622,7 @@ export type ProfesseurCreateManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * The data used to create many Professeurs.
    */
   data: Prisma.ProfesseurCreateManyInput | Prisma.ProfesseurCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1640,6 +1641,7 @@ export type ProfesseurCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Exte
    * The data used to create many Professeurs.
    */
   data: Prisma.ProfesseurCreateManyInput | Prisma.ProfesseurCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

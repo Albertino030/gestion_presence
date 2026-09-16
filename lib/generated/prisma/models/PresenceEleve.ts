@@ -579,6 +579,7 @@ export type PresenceEleveCreateOrConnectWithoutEleveInput = {
 
 export type PresenceEleveCreateManyEleveInputEnvelope = {
   data: Prisma.PresenceEleveCreateManyEleveInput | Prisma.PresenceEleveCreateManyEleveInput[]
+  skipDuplicates?: boolean
 }
 
 export type PresenceEleveUpsertWithWhereUniqueWithoutEleveInput = {
@@ -640,6 +641,7 @@ export type PresenceEleveCreateOrConnectWithoutCoursInput = {
 
 export type PresenceEleveCreateManyCoursInputEnvelope = {
   data: Prisma.PresenceEleveCreateManyCoursInput | Prisma.PresenceEleveCreateManyCoursInput[]
+  skipDuplicates?: boolean
 }
 
 export type PresenceEleveUpsertWithWhereUniqueWithoutCoursInput = {
@@ -1498,6 +1500,7 @@ export type PresenceEleveCreateManyArgs<ExtArgs extends runtime.Types.Extensions
    * The data used to create many PresenceEleves.
    */
   data: Prisma.PresenceEleveCreateManyInput | Prisma.PresenceEleveCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1516,6 +1519,7 @@ export type PresenceEleveCreateManyAndReturnArgs<ExtArgs extends runtime.Types.E
    * The data used to create many PresenceEleves.
    */
   data: Prisma.PresenceEleveCreateManyInput | Prisma.PresenceEleveCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

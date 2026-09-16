@@ -1325,6 +1325,7 @@ export type MatiereCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * The data used to create many Matieres.
    */
   data: Prisma.MatiereCreateManyInput | Prisma.MatiereCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1343,6 +1344,7 @@ export type MatiereCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensi
    * The data used to create many Matieres.
    */
   data: Prisma.MatiereCreateManyInput | Prisma.MatiereCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

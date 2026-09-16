@@ -458,6 +458,7 @@ export type ProfesseurMatiereCreateOrConnectWithoutProfesseurInput = {
 
 export type ProfesseurMatiereCreateManyProfesseurInputEnvelope = {
   data: Prisma.ProfesseurMatiereCreateManyProfesseurInput | Prisma.ProfesseurMatiereCreateManyProfesseurInput[]
+  skipDuplicates?: boolean
 }
 
 export type ProfesseurMatiereUpsertWithWhereUniqueWithoutProfesseurInput = {
@@ -504,6 +505,7 @@ export type ProfesseurMatiereCreateOrConnectWithoutMatiereInput = {
 
 export type ProfesseurMatiereCreateManyMatiereInputEnvelope = {
   data: Prisma.ProfesseurMatiereCreateManyMatiereInput | Prisma.ProfesseurMatiereCreateManyMatiereInput[]
+  skipDuplicates?: boolean
 }
 
 export type ProfesseurMatiereUpsertWithWhereUniqueWithoutMatiereInput = {
@@ -1292,6 +1294,7 @@ export type ProfesseurMatiereCreateManyArgs<ExtArgs extends runtime.Types.Extens
    * The data used to create many ProfesseurMatieres.
    */
   data: Prisma.ProfesseurMatiereCreateManyInput | Prisma.ProfesseurMatiereCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1310,6 +1313,7 @@ export type ProfesseurMatiereCreateManyAndReturnArgs<ExtArgs extends runtime.Typ
    * The data used to create many ProfesseurMatieres.
    */
   data: Prisma.ProfesseurMatiereCreateManyInput | Prisma.ProfesseurMatiereCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

@@ -578,6 +578,7 @@ export type EleveCreateOrConnectWithoutClasseInput = {
 
 export type EleveCreateManyClasseInputEnvelope = {
   data: Prisma.EleveCreateManyClasseInput | Prisma.EleveCreateManyClasseInput[]
+  skipDuplicates?: boolean
 }
 
 export type EleveUpsertWithWhereUniqueWithoutClasseInput = {
@@ -1514,6 +1515,7 @@ export type EleveCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * The data used to create many Eleves.
    */
   data: Prisma.EleveCreateManyInput | Prisma.EleveCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1532,6 +1534,7 @@ export type EleveCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extension
    * The data used to create many Eleves.
    */
   data: Prisma.EleveCreateManyInput | Prisma.EleveCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */
