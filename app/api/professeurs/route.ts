@@ -62,6 +62,7 @@ export async function GET(request: Request) {
 
       select: {
         id: true,
+        userId: true,
         telephone: true,
         actif: true,
         createdAt: true,
@@ -117,10 +118,13 @@ export async function GET(request: Request) {
 }
 
 // ======================================================
-// POST : créer un professeur
+// POST : créer un professeur + compte de connexion
 // ======================================================
 export async function POST(request: Request) {
   try {
+    // --------------------------------------------------
+    // Vérification ADMIN
+    // --------------------------------------------------
     const auth = await requireAdmin();
 
     if (!auth.authorized) {
@@ -136,6 +140,9 @@ export async function POST(request: Request) {
       );
     }
 
+    // --------------------------------------------------
+    // Récupération des données
+    // --------------------------------------------------
     const body = await request.json();
 
     const nom = String(body.nom ?? "").trim();
@@ -144,6 +151,9 @@ export async function POST(request: Request) {
     const password = String(body.password ?? "");
     const telephone = String(body.telephone ?? "").trim();
 
+    // --------------------------------------------------
+    // Validation
+    // --------------------------------------------------
     if (!nom || !prenom || !email || !password) {
       return NextResponse.json(
         {
@@ -166,6 +176,9 @@ export async function POST(request: Request) {
       );
     }
 
+    // --------------------------------------------------
+    // Vérifier si l'e-mail existe déjà
+    // --------------------------------------------------
     const existingUser = await prisma.user.findUnique({
       where: {
         email,
@@ -176,52 +189,80 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Cette adresse e-mail est déjà utilisée.",
+          message:
+            "Cette adresse e-mail est déjà utilisée.",
         },
         { status: 409 }
       );
     }
 
+    // --------------------------------------------------
+    // Hash du mot de passe
+    // --------------------------------------------------
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const professeur = await prisma.professeur.create({
-      data: {
-        telephone: telephone || null,
+    // --------------------------------------------------
+    // Création User + Professeur dans une transaction
+    // --------------------------------------------------
+    const professeur = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          nom,
+          prenom,
+          email,
+          password: hashedPassword,
 
-        user: {
-          create: {
-            nom,
-            prenom,
-            email,
-            password: hashedPassword,
-            role: "PROFESSEUR",
+          // IMPORTANT :
+          // le rôle est imposé par le système.
+          role: "PROFESSEUR",
+        },
+      });
+
+      const nouveauProfesseur = await tx.professeur.create({
+        data: {
+          userId: user.id,
+          telephone: telephone || null,
+        },
+
+        select: {
+          id: true,
+          userId: true,
+          telephone: true,
+          actif: true,
+          createdAt: true,
+
+          user: {
+            select: {
+              id: true,
+              nom: true,
+              prenom: true,
+              email: true,
+              role: true,
+            },
           },
         },
-      },
+      });
 
-      select: {
-        id: true,
-        telephone: true,
-        actif: true,
-        createdAt: true,
-
-        user: {
-          select: {
-            id: true,
-            nom: true,
-            prenom: true,
-            email: true,
-            role: true,
-          },
-        },
-      },
+      return nouveauProfesseur;
     });
 
+    // --------------------------------------------------
+    // Réponse
+    // --------------------------------------------------
     return NextResponse.json(
       {
         success: true,
-        message: "Professeur créé avec succès.",
+        message:
+          "Professeur et compte de connexion créés avec succès.",
+
         professeur,
+
+        compte: {
+          email: professeur.user.email,
+          role: professeur.user.role,
+          message:
+            "Le professeur peut maintenant se connecter avec cette adresse e-mail et le mot de passe fourni par l'administrateur.",
+        },
       },
       { status: 201 }
     );
@@ -231,7 +272,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Erreur lors de la création du professeur.",
+        message:
+          "Erreur lors de la création du professeur.",
       },
       { status: 500 }
     );
@@ -243,6 +285,9 @@ export async function POST(request: Request) {
 // ======================================================
 export async function PUT(request: Request) {
   try {
+    // --------------------------------------------------
+    // Vérification ADMIN
+    // --------------------------------------------------
     const auth = await requireAdmin();
 
     if (!auth.authorized) {
@@ -258,6 +303,9 @@ export async function PUT(request: Request) {
       );
     }
 
+    // --------------------------------------------------
+    // Données
+    // --------------------------------------------------
     const body = await request.json();
 
     const id = Number(body.id);
@@ -266,8 +314,13 @@ export async function PUT(request: Request) {
     const prenom = String(body.prenom ?? "").trim();
     const email = String(body.email ?? "").trim().toLowerCase();
     const telephone = String(body.telephone ?? "").trim();
+
+    // Le mot de passe est facultatif lors d'une modification.
     const password = String(body.password ?? "");
 
+    // --------------------------------------------------
+    // Validation ID
+    // --------------------------------------------------
     if (!Number.isInteger(id) || id <= 0) {
       return NextResponse.json(
         {
@@ -278,20 +331,28 @@ export async function PUT(request: Request) {
       );
     }
 
+    // --------------------------------------------------
+    // Validation données obligatoires
+    // --------------------------------------------------
     if (!nom || !prenom || !email) {
       return NextResponse.json(
         {
           success: false,
-          message: "Nom, prénom et e-mail sont obligatoires.",
+          message:
+            "Nom, prénom et e-mail sont obligatoires.",
         },
         { status: 400 }
       );
     }
 
+    // --------------------------------------------------
+    // Vérifier le professeur
+    // --------------------------------------------------
     const professeur = await prisma.professeur.findUnique({
       where: {
         id,
       },
+
       include: {
         user: true,
       },
@@ -307,9 +368,13 @@ export async function PUT(request: Request) {
       );
     }
 
+    // --------------------------------------------------
+    // Vérifier l'e-mail
+    // --------------------------------------------------
     const emailUtilisateur = await prisma.user.findFirst({
       where: {
         email,
+
         NOT: {
           id: professeur.userId,
         },
@@ -320,23 +385,34 @@ export async function PUT(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Cette adresse e-mail est déjà utilisée.",
+          message:
+            "Cette adresse e-mail est déjà utilisée.",
         },
         { status: 409 }
       );
     }
 
+    // --------------------------------------------------
+    // Données User
+    // --------------------------------------------------
     const userData: {
       nom: string;
       prenom: string;
       email: string;
       password?: string;
+      role?: "PROFESSEUR";
     } = {
       nom,
       prenom,
       email,
+
+      // On garantit que ce compte reste professeur.
+      role: "PROFESSEUR",
     };
 
+    // --------------------------------------------------
+    // Nouveau mot de passe facultatif
+    // --------------------------------------------------
     if (password) {
       if (password.length < 6) {
         return NextResponse.json(
@@ -349,57 +425,75 @@ export async function PUT(request: Request) {
         );
       }
 
-      userData.password = await bcrypt.hash(password, 12);
+      userData.password = await bcrypt.hash(
+        password,
+        12
+      );
     }
 
-    const professeurModifie = await prisma.professeur.update({
-      where: {
-        id,
-      },
+    // --------------------------------------------------
+    // Modification
+    // --------------------------------------------------
+    const professeurModifie =
+      await prisma.$transaction(async (tx) => {
+        const updatedProfesseur =
+          await tx.professeur.update({
+            where: {
+              id,
+            },
 
-      data: {
-        telephone: telephone || null,
+            data: {
+              telephone: telephone || null,
 
-        user: {
-          update: userData,
-        },
-      },
-
-      select: {
-        id: true,
-        telephone: true,
-        actif: true,
-        createdAt: true,
-        updatedAt: true,
-
-        user: {
-          select: {
-            id: true,
-            nom: true,
-            prenom: true,
-            email: true,
-            role: true,
-          },
-        },
-
-        matieres: {
-          select: {
-            id: true,
-            matiere: {
-              select: {
-                id: true,
-                nom: true,
-                code: true,
+              user: {
+                update: userData,
               },
             },
-          },
-        },
-      },
-    });
 
+            select: {
+              id: true,
+              userId: true,
+              telephone: true,
+              actif: true,
+              createdAt: true,
+              updatedAt: true,
+
+              user: {
+                select: {
+                  id: true,
+                  nom: true,
+                  prenom: true,
+                  email: true,
+                  role: true,
+                },
+              },
+
+              matieres: {
+                select: {
+                  id: true,
+
+                  matiere: {
+                    select: {
+                      id: true,
+                      nom: true,
+                      code: true,
+                    },
+                  },
+                },
+              },
+            },
+          });
+
+        return updatedProfesseur;
+      });
+
+    // --------------------------------------------------
+    // Réponse
+    // --------------------------------------------------
     return NextResponse.json({
       success: true,
-      message: "Professeur modifié avec succès.",
+      message:
+        "Professeur et compte de connexion modifiés avec succès.",
       professeur: professeurModifie,
     });
   } catch (error) {
@@ -408,7 +502,8 @@ export async function PUT(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Erreur lors de la modification du professeur.",
+        message:
+          "Erreur lors de la modification du professeur.",
       },
       { status: 500 }
     );
@@ -420,6 +515,9 @@ export async function PUT(request: Request) {
 // ======================================================
 export async function DELETE(request: Request) {
   try {
+    // --------------------------------------------------
+    // Vérification ADMIN
+    // --------------------------------------------------
     const auth = await requireAdmin();
 
     if (!auth.authorized) {
@@ -435,6 +533,9 @@ export async function DELETE(request: Request) {
       );
     }
 
+    // --------------------------------------------------
+    // ID
+    // --------------------------------------------------
     const { searchParams } = new URL(request.url);
 
     const id = Number(searchParams.get("id"));
@@ -443,16 +544,21 @@ export async function DELETE(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Identifiant du professeur invalide.",
+          message:
+            "Identifiant du professeur invalide.",
         },
         { status: 400 }
       );
     }
 
+    // --------------------------------------------------
+    // Vérifier le professeur
+    // --------------------------------------------------
     const professeur = await prisma.professeur.findUnique({
       where: {
         id,
       },
+
       select: {
         id: true,
         userId: true,
@@ -469,15 +575,29 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.professeur.delete({
-      where: {
-        id,
-      },
+    // --------------------------------------------------
+    // Suppression
+    // --------------------------------------------------
+    await prisma.$transaction(async (tx) => {
+      // Le Professeur est supprimé en premier.
+      await tx.professeur.delete({
+        where: {
+          id,
+        },
+      });
+
+      // Puis son compte User.
+      await tx.user.delete({
+        where: {
+          id: professeur.userId,
+        },
+      });
     });
 
     return NextResponse.json({
       success: true,
-      message: "Professeur supprimé avec succès.",
+      message:
+        "Professeur et compte de connexion supprimés avec succès.",
     });
   } catch (error) {
     console.error("Erreur DELETE /api/professeurs :", error);
