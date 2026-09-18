@@ -30,6 +30,11 @@ function normaliserDatePresence(date = new Date()) {
   return debutJour(date);
 }
 
+/* =========================================================
+   GET
+   Chargement de l'espace professeur
+========================================================= */
+
 export async function GET() {
   try {
     const user = await getCurrentUser();
@@ -69,10 +74,15 @@ export async function GET() {
     const aujourdHuiDebut = debutJour();
     const aujourdHuiFin = finJour();
 
+    /* =====================================================
+       PROFESSEUR
+    ===================================================== */
+
     const professeur = await prisma.professeur.findUnique({
       where: {
         id: professeurId,
       },
+
       include: {
         user: {
           select: {
@@ -83,10 +93,12 @@ export async function GET() {
             role: true,
           },
         },
+
         matieres: {
           include: {
             matiere: true,
           },
+
           orderBy: {
             matiere: {
               nom: "asc",
@@ -106,11 +118,16 @@ export async function GET() {
       );
     }
 
+    /* =====================================================
+       COURS DU PROFESSEUR
+    ===================================================== */
+
     const cours = await prisma.cours.findMany({
       where: {
         professeurId,
         actif: true,
       },
+
       include: {
         classe: {
           include: {
@@ -118,6 +135,7 @@ export async function GET() {
               where: {
                 actif: true,
               },
+
               orderBy: [
                 {
                   nom: "asc",
@@ -129,7 +147,9 @@ export async function GET() {
             },
           },
         },
+
         matiere: true,
+
         presencesEleves: {
           where: {
             datePresence: {
@@ -137,6 +157,7 @@ export async function GET() {
               lte: aujourdHuiFin,
             },
           },
+
           include: {
             eleve: {
               select: {
@@ -149,6 +170,7 @@ export async function GET() {
           },
         },
       },
+
       orderBy: [
         {
           jour: "asc",
@@ -159,36 +181,105 @@ export async function GET() {
       ],
     });
 
-    const coursDuJour = cours.filter((item) => {
-      const jourActuel = new Date().getDay();
+    /* =====================================================
+       DÉTERMINER LE JOUR ACTUEL
+    ===================================================== */
 
-      const correspondance: Record<number, string> = {
-        1: "LUNDI",
-        2: "MARDI",
-        3: "MERCREDI",
-        4: "JEUDI",
-        5: "VENDREDI",
-        6: "SAMEDI",
-      };
+    const jourActuel = new Date().getDay();
 
-      return item.jour === correspondance[jourActuel];
-    });
+    const correspondanceJour: Record<number, string> = {
+      1: "LUNDI",
+      2: "MARDI",
+      3: "MERCREDI",
+      4: "JEUDI",
+      5: "VENDREDI",
+      6: "SAMEDI",
+      0: "DIMANCHE",
+    };
 
-    const presenceProfesseur = await prisma.presenceProfesseur.findFirst({
-      where: {
-        professeurId,
-        datePresence: {
-          gte: aujourdHuiDebut,
-          lte: aujourdHuiFin,
+    const jourNom = correspondanceJour[jourActuel];
+
+    const coursDuJour = cours
+      .filter((item) => item.jour === jourNom)
+      .map((item) => ({
+        id: item.id,
+
+        jour: item.jour,
+
+        heureDebut: item.heureDebut,
+
+        heureFin: item.heureFin,
+
+        classe: {
+          id: item.classe.id,
+
+          nom: item.classe.nom,
+
+          niveau: item.classe.niveau,
+
+          eleves: item.classe.eleves.map((eleve) => ({
+            id: eleve.id,
+
+            matricule: eleve.matricule,
+
+            nom: eleve.nom,
+
+            prenom: eleve.prenom,
+          })),
         },
-      },
-      orderBy: {
-        datePresence: "desc",
-      },
-    });
+
+        matiere: {
+          id: item.matiere.id,
+
+          nom: item.matiere.nom,
+
+          code: item.matiere.code,
+        },
+
+        presencesEleves: item.presencesEleves.map((presence) => ({
+          id: presence.id,
+
+          eleveId: presence.eleveId,
+
+          coursId: presence.coursId,
+
+          datePresence: presence.datePresence,
+
+          heureAppel: presence.heureAppel,
+
+          statut: presence.statut,
+
+          eleve: presence.eleve,
+        })),
+      }));
+
+    /* =====================================================
+       PRÉSENCE DU PROFESSEUR
+    ===================================================== */
+
+    const presenceProfesseur =
+      await prisma.presenceProfesseur.findFirst({
+        where: {
+          professeurId,
+
+          datePresence: {
+            gte: aujourdHuiDebut,
+            lte: aujourdHuiFin,
+          },
+        },
+
+        orderBy: {
+          datePresence: "desc",
+        },
+      });
+
+    /* =====================================================
+       STATISTIQUES
+    ===================================================== */
 
     const totalEleves = coursDuJour.reduce(
-      (total, coursItem) => total + coursItem.classe.eleves.length,
+      (total, coursItem) =>
+        total + coursItem.classe.eleves.length,
       0
     );
 
@@ -219,31 +310,49 @@ export async function GET() {
       0
     );
 
-    const reclamations = await prisma.reclamation.findMany({
-      where: {
-        professeurId,
-      },
-      orderBy: {
-        dateReclamation: "desc",
-      },
-      take: 5,
-    });
+    /* =====================================================
+       RÉCLAMATIONS
+    ===================================================== */
+
+    const reclamations =
+      await prisma.reclamation.findMany({
+        where: {
+          professeurId,
+        },
+
+        orderBy: {
+          dateReclamation: "desc",
+        },
+
+        take: 5,
+      });
+
+    /* =====================================================
+       RÉPONSE
+    ===================================================== */
 
     return NextResponse.json({
       success: true,
 
       professeur: {
         id: professeur.id,
+
         nom: professeur.user.nom,
+
         prenom: professeur.user.prenom,
+
         email: professeur.user.email,
+
         telephone: professeur.telephone,
+
         actif: professeur.actif,
       },
 
       matieres: professeur.matieres.map((item) => ({
         id: item.matiere.id,
+
         nom: item.matiere.nom,
+
         code: item.matiere.code,
       })),
 
@@ -251,13 +360,20 @@ export async function GET() {
 
       statistiques: {
         nombreCours: coursDuJour.length,
+
         totalEleves,
+
         totalPresents,
+
         totalAbsents,
+
         totalRetards,
+
         tauxPresence:
           totalEleves > 0
-            ? Math.round((totalPresents / totalEleves) * 100)
+            ? Math.round(
+                (totalPresents / totalEleves) * 100
+              )
             : 0,
       },
 
@@ -266,7 +382,10 @@ export async function GET() {
       reclamations,
     });
   } catch (error) {
-    console.error("Erreur espace professeur GET :", error);
+    console.error(
+      "Erreur espace professeur GET :",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -277,6 +396,11 @@ export async function GET() {
     );
   }
 }
+
+/* =========================================================
+   POST
+   Enregistrer / modifier une présence élève
+========================================================= */
 
 export async function POST(request: Request) {
   try {
@@ -315,14 +439,28 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const coursId = Number(body.coursId);
-    const eleveId = Number(body.eleveId);
-    const statut = String(body.statut ?? "PRESENT");
 
-    const statutsAutorises = ["PRESENT", "ABSENT", "RETARD"];
+    const eleveId = Number(body.eleveId);
+
+    const statut = String(
+      body.statut ?? "PRESENT"
+    ).toUpperCase();
+
+    const statutsAutorises = [
+      "PRESENT",
+      "ABSENT",
+      "RETARD",
+    ];
+
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
 
     if (
       !Number.isInteger(coursId) ||
+      coursId <= 0 ||
       !Number.isInteger(eleveId) ||
+      eleveId <= 0 ||
       !statutsAutorises.includes(statut)
     ) {
       return NextResponse.json(
@@ -334,12 +472,19 @@ export async function POST(request: Request) {
       );
     }
 
+    /* =====================================================
+       VÉRIFIER LE COURS
+    ===================================================== */
+
     const cours = await prisma.cours.findFirst({
       where: {
         id: coursId,
+
         professeurId: user.professeur.id,
+
         actif: true,
       },
+
       include: {
         classe: true,
       },
@@ -349,16 +494,23 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Cours introuvable ou non autorisé.",
+          message:
+            "Cours introuvable ou non autorisé.",
         },
         { status: 404 }
       );
     }
 
+    /* =====================================================
+       VÉRIFIER L'ÉLÈVE
+    ===================================================== */
+
     const eleve = await prisma.eleve.findFirst({
       where: {
         id: eleveId,
+
         classeId: cours.classeId,
+
         actif: true,
       },
     });
@@ -367,58 +519,94 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Élève introuvable dans cette classe.",
+          message:
+            "Élève introuvable dans cette classe.",
         },
         { status: 404 }
       );
     }
 
-    const maintenant = new Date();
-    const datePresence = normaliserDatePresence(maintenant);
+    /* =====================================================
+       ENREGISTREMENT
+    ===================================================== */
 
-    const presence = await prisma.presenceEleve.upsert({
-      where: {
-        eleveId_coursId_datePresence: {
-          eleveId,
-          coursId,
-          datePresence,
-        },
-      },
-      update: {
-        statut: statut as "PRESENT" | "ABSENT" | "RETARD",
-        heureAppel: maintenant,
-      },
-      create: {
-        eleveId,
-        coursId,
-        datePresence,
-        heureAppel: maintenant,
-        statut: statut as "PRESENT" | "ABSENT" | "RETARD",
-      },
-      include: {
-        eleve: {
-          select: {
-            id: true,
-            matricule: true,
-            nom: true,
-            prenom: true,
+    const maintenant = new Date();
+
+    const datePresence =
+      normaliserDatePresence(maintenant);
+
+    const presence =
+      await prisma.presenceEleve.upsert({
+        where: {
+          eleveId_coursId_datePresence: {
+            eleveId,
+
+            coursId,
+
+            datePresence,
           },
         },
-      },
-    });
+
+        update: {
+          statut:
+            statut as
+              | "PRESENT"
+              | "ABSENT"
+              | "RETARD",
+
+          heureAppel: maintenant,
+        },
+
+        create: {
+          eleveId,
+
+          coursId,
+
+          datePresence,
+
+          heureAppel: maintenant,
+
+          statut:
+            statut as
+              | "PRESENT"
+              | "ABSENT"
+              | "RETARD",
+        },
+
+        include: {
+          eleve: {
+            select: {
+              id: true,
+
+              matricule: true,
+
+              nom: true,
+
+              prenom: true,
+            },
+          },
+        },
+      });
 
     return NextResponse.json({
       success: true,
+
       message: "Présence enregistrée.",
+
       presence,
     });
   } catch (error) {
-    console.error("Erreur espace professeur POST :", error);
+    console.error(
+      "Erreur espace professeur POST :",
+      error
+    );
 
     return NextResponse.json(
       {
         success: false,
-        message: "Impossible d'enregistrer la présence.",
+
+        message:
+          "Impossible d'enregistrer la présence.",
       },
       { status: 500 }
     );
